@@ -1,7 +1,7 @@
 const express = require("express");
 require("dotenv").config();
 var cors = require("cors");
-const { MongoClient, ServerApiVersion } = require("mongodb");
+const { MongoClient, ServerApiVersion, ObjectId } = require("mongodb");
 const app = express();
 const port = 7000;
 
@@ -23,22 +23,50 @@ async function run() {
     const database = client.db("groceryDatabase");
     const itemCollection = database.collection("itemCollection");
 
-    // const item = {
-    //   itemName: "vegetables",
-    //   description:
-    //     "this is a good vegetable, all the vegetarian out there can find peace here.",
-    //   price: "$89",
-    //   quantity: "450kg",
-    //   supplierName: "Zawahiri Farm",
-    //   imgURL: "https://i.ibb.co/C6MS34x/vegetables-140917-1280.jpg",
-    // };
+    // Find Multiple documents Api
 
+    app.get("/allItems", async (req, res) => {
+      const cursor = itemCollection.find({});
+      const result = await cursor.toArray();
+      res.send(result);
+    });
+
+    // Find Single Documents API
+    app.get("/singleItem/:id", async (req, res) => {
+      const id = req.params.id;
+      const query = ObjectId(id);
+      const result = await itemCollection.findOne(query);
+      res.send(result);
+    });
+
+    // Post APi
     app.post("/addItems", async (req, res) => {
       const newItem = req.body;
       const result = await itemCollection.insertOne(newItem);
+      console.log(
+        `A document was inserted with the _id: ${result.insertedId} `
+      );
     });
 
-    console.log(`A document was inserted with the _id: ${result.insertedId} `);
+    // Update Quantity
+    app.put("/singleItem/:id", async (req, res) => {
+      const id = req.params.id;
+      const updatedStuff = req.body;
+      const filter = { _id: ObjectId(id) };
+      const options = { upsert: true };
+      const updateDoc = {
+        $set: {
+          item: updatedStuff.name,
+          description: updatedStuff.description,
+          price: updatedStuff.price,
+          quantity: updatedStuff.quantity,
+          supplierName: updatedStuff.supplierName,
+          imgURL: updatedStuff.imgURL,
+        },
+      };
+      const result = await itemCollection.updateOne(filter, updateDoc, options);
+      res.json(result);
+    });
   } finally {
     // await client.close()
   }
