@@ -34,7 +34,7 @@ async function run() {
     // Find Single Documents API
     app.get("/singleItem/:id", async (req, res) => {
       const id = req.params.id;
-      const query = ObjectId(id);
+      const query = { _id: ObjectId(id) };
       const result = await itemCollection.findOne(query);
       res.send(result);
     });
@@ -46,6 +46,15 @@ async function run() {
       console.log(
         `A document was inserted with the _id: ${result.insertedId} `
       );
+      res.json(result);
+    });
+
+    // Delete An Item API
+    app.delete("/singleItem/:id", async (req, res) => {
+      const id = req.params.id;
+      const query = { _id: ObjectId(id) };
+      const result = await itemCollection.deleteOne(query);
+      res.send(result);
     });
 
     // Update Quantity
@@ -56,7 +65,7 @@ async function run() {
       const options = { upsert: true };
       const updateDoc = {
         $set: {
-          item: updatedStuff.name,
+          itemName: updatedStuff.itemName,
           description: updatedStuff.description,
           price: updatedStuff.price,
           quantity: updatedStuff.quantity,
@@ -64,7 +73,11 @@ async function run() {
           imgURL: updatedStuff.imgURL,
         },
       };
-      const result = await itemCollection.updateOne(filter, updateDoc, options);
+      const result = await itemCollection.findOneAndUpdate(
+        filter,
+        updateDoc,
+        options
+      );
       res.json(result);
     });
   } finally {
